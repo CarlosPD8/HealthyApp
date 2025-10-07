@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* (Opcional) Tus utilidades personalizadas */
+.glass { @apply bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl shadow-lg; }
+.glass-soft { @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl shadow; }
+.label { @apply text-sm text-slate-300; }
+.input { @apply w-full px-4 py-2.5 rounded-xl bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 focus:border-transparent placeholder-slate-400; }
+.btn-primary { @apply inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 transition font-medium; }
+.table th, .table td { @apply px-3 py-2; }
+.table thead th { @apply text-left text-slate-300 border-b border-white/10; }
+.table tbody td { @apply border-b border-white/5; }
