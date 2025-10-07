@@ -79,6 +79,8 @@ res.json(rows);
 });
 
 
+
+
 // Salud
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
