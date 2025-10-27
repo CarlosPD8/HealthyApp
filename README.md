@@ -16,7 +16,7 @@ Solo se puede realizar un registro por día.
 - Interfaz sencilla y visual.
 ## 🧠 Tecnologías Utilizadas
 
-- **Frontend:** HTML5, CSS3, JavaScript (o framework si lo usas: React, Vue, etc.)  
+- **Frontend:** HTML5, CSS3, JavaScript
 - **Base de datos:** SQLite / MySQL / MongoDB  
 - **Control de versiones:** Git y GitHub  
 ## 🖥️ Mockups y Capturas
