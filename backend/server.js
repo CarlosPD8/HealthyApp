@@ -3,88 +3,131 @@ import cors from "cors";
 import sqlite3 from "sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
-
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
 const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, "data.db");
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-super-cambia-esto";
 
-
-// Inicializa DB
 const sqlite = sqlite3.verbose();
 const db = new sqlite.Database(DB_PATH);
 
-
-// Crea tabla si no existe
+// --- Esquema ---
 const initSQL = `
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS entries (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-weight REAL NOT NULL,
-height REAL NOT NULL,
-created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  weight REAL NOT NULL,
+  height REAL NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 `;
-
-
-db.serialize(() => {
-db.run(initSQL);
-});
-
+db.serialize(() => db.exec(initSQL));
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Utils
+function toNumber(v){ if(v===null||v===undefined||v==="") return NaN; const n=Number(v); return Number.isFinite(n)?n:NaN; }
+function signToken(user){ return jwt.sign({ id:user.id, email:user.email }, JWT_SECRET, { expiresIn:"7d" }); }
 
-// Validación simple
-function toNumber(value) {
-if (value === null || value === undefined || value === "") return NaN;
-const n = Number(value);
-return Number.isFinite(n) ? n : NaN;
+// Auth middleware
+function auth(req,res,next){
+  const hdr = req.headers.authorization || "";
+  const token = hdr.startsWith("Bearer ") ? hdr.slice(7) : null;
+  if(!token) return res.status(401).json({ error:"No autorizado" });
+  try{
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = { id: payload.id, email: payload.email };
+    next();
+  }catch(e){
+    return res.status(401).json({ error:"Token inválido o expirado" });
+  }
 }
 
-
-// Crear registro: { weight, height }
-app.post("/api/entries", (req, res) => {
-const weight = toNumber(req.body.weight);
-const height = toNumber(req.body.height);
-
-
-if (!Number.isFinite(weight) || !Number.isFinite(height)) {
-return res.status(400).json({ error: "weight y height deben ser números" });
-}
-if (weight <= 0 || height <= 0) {
-return res.status(400).json({ error: "weight y height deben ser > 0" });
-}
-
-
-const sql = "INSERT INTO entries (weight, height) VALUES (?, ?)";
-db.run(sql, [weight, height], function (err) {
-if (err) return res.status(500).json({ error: err.message });
-return res.status(201).json({ id: this.lastID, weight, height, created_at: new Date().toISOString() });
-});
+// ---- Rutas de autenticación ----
+app.post("/api/auth/register", (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: "email y password requeridos" });
+  const password_hash = bcrypt.hashSync(password, 10);
+  const sql = "INSERT INTO users (email, password_hash) VALUES (?, ?)";
+  db.run(sql, [email.trim().toLowerCase(), password_hash], function (err) {
+    if (err) {
+      if (String(err.message).includes("UNIQUE")) return res.status(409).json({ error: "Email ya registrado" });
+      return res.status(500).json({ error: err.message });
+    }
+    const user = { id: this.lastID, email };
+    const token = signToken(user);
+    res.status(201).json({ token, user });
+  });
 });
 
-
-// Listar registros (más nuevos primero)
-app.get("/api/entries", (req, res) => {
-const sql = "SELECT id, weight, height, created_at FROM entries ORDER BY datetime(created_at) DESC, id DESC";
-db.all(sql, [], (err, rows) => {
-if (err) return res.status(500).json({ error: err.message });
-res.json(rows);
+app.post("/api/auth/login", (req,res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: "email y password requeridos" });
+  db.get("SELECT id, email, password_hash FROM users WHERE email = ?", [email.trim().toLowerCase()], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(401).json({ error: "Credenciales inválidas" });
+    const ok = bcrypt.compareSync(password, row.password_hash);
+    if (!ok) return res.status(401).json({ error: "Credenciales inválidas" });
+    const token = signToken({ id: row.id, email: row.email });
+    res.json({ token, user: { id: row.id, email: row.email } });
+  });
 });
+
+// ---- Rutas protegidas de entries ----
+app.post("/api/entries", auth, (req, res) => {
+  const weight = toNumber(req.body.weight);
+  const height = toNumber(req.body.height);
+  if (!Number.isFinite(weight) || !Number.isFinite(height)) {
+    return res.status(400).json({ error: "weight y height deben ser números" });
+  }
+  if (weight <= 0 || height <= 0) {
+    return res.status(400).json({ error: "weight y height deben ser > 0" });
+  }
+  const sql = "INSERT INTO entries (user_id, weight, height) VALUES (?, ?, ?)";
+  db.run(sql, [req.user.id, weight, height], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(201).json({ id: this.lastID, weight, height, created_at: new Date().toISOString() });
+  });
 });
 
+app.get("/api/entries", auth, (_req, res) => {
+  const sql = "SELECT id, weight, height, created_at FROM entries WHERE user_id = ? ORDER BY datetime(created_at) DESC, id DESC";
+  db.all(sql, [_req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
 
+// (Opcional) borrar si lo vuelves a usar más adelante:
+// app.delete("/api/entries/:id", auth, (req, res) => {
+//   const id = Number(req.params.id);
+//   if (!Number.isInteger(id)) return res.status(400).json({ error: "ID inválido" });
+//   db.run("DELETE FROM entries WHERE id = ? AND user_id = ?", [id, req.user.id], function (err) {
+//     if (err) return res.status(500).json({ error: err.message });
+//     if (this.changes === 0) return res.status(404).json({ error: "Registro no encontrado" });
+//     res.json({ deleted: true, id });
+//   });
+// });
 
-
-// Salud
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-
 app.listen(PORT, () => {
-console.log(`API escuchando en http://localhost:${PORT}`);
+  console.log(`API escuchando en http://localhost:${PORT}`);
 });
