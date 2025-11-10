@@ -97,9 +97,11 @@ app.post("/api/entries", auth, (req, res) => {
   if (!Number.isFinite(weight) || !Number.isFinite(height)) {
     return res.status(400).json({ error: "weight y height deben ser números" });
   }
-  if (weight <= 0 || height <= 0) {
-    return res.status(400).json({ error: "weight y height deben ser > 0" });
-  }
+  if (weight <= 2 || height <= 0 || height >= 3) {
+  return res.status(400).json({
+    error: "Valores inválidos: peso > 2 kg, 0 m < altura < 3 m"
+  });
+}
   const sql = "INSERT INTO entries (user_id, weight, height) VALUES (?, ?, ?)";
   db.run(sql, [req.user.id, weight, height], function (err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -115,7 +117,6 @@ app.get("/api/entries", auth, (_req, res) => {
   });
 });
 
-// (Opcional) borrar si lo vuelves a usar más adelante:
 // app.delete("/api/entries/:id", auth, (req, res) => {
 //   const id = Number(req.params.id);
 //   if (!Number.isInteger(id)) return res.status(400).json({ error: "ID inválido" });
@@ -126,8 +127,17 @@ app.get("/api/entries", auth, (_req, res) => {
 //   });
 // });
 
+// Salud
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-app.listen(PORT, () => {
-  console.log(`API escuchando en http://localhost:${PORT}`);
-});
+
+export default app;
+
+
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`API escuchando en http://localhost:${PORT}`);
+  });
+}
+
+

@@ -69,6 +69,7 @@ function Register() {
       login(j); nav('/')
     } catch (err) { setError(err.message) }
   }
+
   return (
     <div className="min-h-dvh flex items-center justify-center p-6">
       <div className="w-full max-w-md p-6 rounded-2xl shadow-xl border bg-gradient-to-r from-pink-200 via-fuchsia-200 to-purple-200 text-black">
@@ -76,22 +77,40 @@ function Register() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block mb-1">Email</label>
-            <input className="w-full px-4 py-2 rounded-xl bg-white/70 border text-black"
-              value={email} onChange={e => setEmail(e.target.value)} />
+            <input
+              type="email"
+              placeholder="tu@email.com"
+              className="w-full px-4 py-2 rounded-xl bg-white/70 border text-black"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
           </div>
           <div>
             <label className="block mb-1">Contraseña</label>
-            <input type="password" className="w-full px-4 py-2 rounded-xl bg-white/70 border text-black"
-              value={password} onChange={e => setPassword(e.target.value)} />
+            <input
+              type="password"
+              placeholder="••••••••"
+              className="w-full px-4 py-2 rounded-xl bg-white/70 border text-black"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
           </div>
           {error && <div className="p-3 rounded-lg bg-rose-100 text-rose-900">{error}</div>}
-          <button type="submit" className="w-full px-4 py-2 rounded-xl text-white font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">Registrarme</button>
+          <button
+            type="submit"
+            className="w-full px-4 py-2 rounded-xl text-white font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+          >
+            Registrarme
+          </button>
         </form>
-        <p className="mt-3 text-sm">¿Ya tienes cuenta? <a className="underline" href="/login">Inicia sesión</a></p>
+        <p className="mt-3 text-sm">
+          ¿Ya tienes cuenta? <a className="underline" href="/login">Inicia sesión</a>
+        </p>
       </div>
     </div>
   )
 }
+
 
 // ---- Página privada (tu dashboard existente) ----
 function Dashboard() {
