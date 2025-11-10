@@ -30,8 +30,53 @@ Solo se puede realizar un registro por día.
 ## 🔄 Diagrama de flujo
 ![Diagrama de Secuencia](ruta/a/tu/diagrama.png)
 
+
 ## 🧩 Instalación y Ejecución
 
-Clona este repositorio:
-   ```bash
-   git clone https://github.com/CarlosPD8/HealthyApp.git
+- Descarga la carpeta comprimida **HealthyApp.zip**  
+- Levantar servicio **backend**:
+    1. Abrir **cmd**
+    2. Dirigirse a `HealthyApp\backend`
+    3. Ejecutar el comando:
+
+        ```bash
+        npm start
+        ```
+
+- Levantar servicio **frontend**:
+    1. Abrir **cmd**
+    2. Dirigirse a `HealthyApp\frontend`
+    3. Ejecutar los comandos:
+
+        ```bash
+        npm install
+        npm run dev
+        ```
+
+## Ejecución de Tests
+
+-  Para ejecutar los test del **backend**:
+    1. Abrir **cmd**
+    2. Dirigirse a `HealthyApp\backend`
+    3. Ejecutar el comando:
+
+```bash
+  npm run test
+```
+
+- Para ejecutar los test del **frontend**:
+    1. Abrir **cmd**
+    2. Dirigirse a `HealthyApp\frontend`
+    3. Ejecutar el comando:
+
+```bash
+  npm run cy:run
+```
+
+- Si queremos ver la ejecución de los test de manera mas visual podemos ejecutar el comando:
+
+```bash
+  npm run cy:open
+```
+
+Con este comando utilizamos **Cypress**, una herramienta de testing end-to-end que nos permite automatizar pruebas que simulan la interacción real de un usuario con la aplicación en el navegador.
