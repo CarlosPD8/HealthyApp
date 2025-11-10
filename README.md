@@ -56,7 +56,7 @@ Solo se puede realizar un registro por día.
         npm run dev
         ```
 
-## Ejecución de Tests
+## 🧪 Ejecución de Tests
 
 -  Para ejecutar los test del **backend**:
     1. Abrir **cmd**
