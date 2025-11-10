@@ -23,12 +23,15 @@ Solo se puede realizar un registro por día.
 
 ## 🖥️ Mockups y Capturas
 ### Pantalla principal (Registro diario)
-![Mockup Pantalla 1](ruta/a/tu/imagen1.png)
+![Mockup Pantalla 1](assets/pantalla%20de%20inicio.png)
 
-### Historial de registros
-![Mockup Pantalla 2](ruta/a/tu/imagen2.png)
+### Pantalla de registro
+![Mockup Pantalla 2](assets/pantalla%20de%20registro.png)
+### Pantalla de inicio de sesion
+![Mockup Pantalla 3](assets/pantalla%20de%20inicio%20de%20sesion.png)
+
 ## 🔄 Diagrama de flujo
-![Diagrama de Secuencia](ruta/a/tu/diagrama.png)
+![Diagrama de Secuencia](assets/diagrama.png)
 
 
 ## 🧩 Instalación y Ejecución
