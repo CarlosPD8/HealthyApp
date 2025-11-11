@@ -28,10 +28,10 @@ Solo se puede realizar un registro por día.
 ### Pantalla de registro
 ![Mockup Pantalla 2](docs/assets/pantalla%20de%20registro.png)
 ### Pantalla de inicio de sesion
-![Mockup Pantalla 3](docs/assets/pantalla%20de%20inicio%20de%20sesion.png)
+![Mockup Pantalla 3](docs/assets/pantalla%20inicio%20de%20sesion.png)
 
 ## 🔄 Diagrama de flujo
-![Diagrama de Secuencia](docs/mockups/diagrama%20de%20comportamiento.png)
+![Diagrama de Secuencia](docs/mockups/Diagrama%20de%20comportamiento.png)
 
 
 ## 🧩 Instalación y Ejecución
