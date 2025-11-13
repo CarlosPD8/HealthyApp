@@ -1,30 +1,39 @@
 import request from 'supertest'
-import app from '../../server.js' // usa la app real (export default app)
+import app from '../../server.js' 
 
 describe('POST /api/entries', () => {
   let token
 
   beforeAll(async () => {
-    // crea un usuario y obtén token
+    
     const email = `t${Date.now()}@mail.com`
     const res = await request(app).post('/api/auth/register').send({ email, password: 'abc12345' })
     token = res.body.token
   })
 
-  test('debe crear un registro válido (altura < 3)', async () => {
+  test('debe crear un registro válido (altura < 3 y peso mayor a 2)', async () => {
     const res = await request(app)
       .post('/api/entries')
       .set('Authorization', `Bearer ${token}`)
-      .send({ weight: 70, height: 1.75 })
+      .send({ weight: 2.1, height: 2.9 })
     expect(res.statusCode).toBe(201)
-    expect(res.body.weight).toBe(70)
+    expect(res.body.weight).toBe(2.1)
   })
 
-  test('debe fallar si altura >= 3 m', async () => {
+ test('debe crear un registro válido (altura mayor de 0 )', async () => {
     const res = await request(app)
       .post('/api/entries')
       .set('Authorization', `Bearer ${token}`)
-      .send({ weight: 70, height: 3.75 })
+      .send({ weight: 2.1, height: 0.1 })
+    expect(res.statusCode).toBe(201)
+    expect(res.body.weight).toBe(2.1)
+  })
+
+  test('debe fallar si altura >= 3 m y peso menor a 2', async () => {
+    const res = await request(app)
+      .post('/api/entries')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ weight: 1.9, height: 3.1 })
     expect(res.statusCode).toBe(400)
   })
 
@@ -32,7 +41,7 @@ describe('POST /api/entries', () => {
     const res = await request(app)
       .post('/api/entries')
       .set('Authorization', `Bearer ${token}`)
-      .send({ weight: -70, height: 1.75 })
+      .send({ weight: -70, height: -1.75 })
     expect(res.statusCode).toBe(400)
   })
 
