@@ -3,7 +3,6 @@
 
 Aplicación web que permite registrar el peso y la altura de un usuario, calculando automáticamente el Índice de Masa Corporal (IMC).  
 Los datos quedan guardados junto con la fecha y hora, permitiendo consultar la evolución a lo largo del tiempo.  
-Solo se puede realizar un registro por día.
 
 
 ## 🚀 Características Principales
