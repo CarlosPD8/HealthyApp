@@ -46,6 +46,39 @@ app.use(express.json());
 function toNumber(v){ if(v===null||v===undefined||v==="") return NaN; const n=Number(v); return Number.isFinite(n)?n:NaN; }
 function signToken(user){ return jwt.sign({ id:user.id, email:user.email }, JWT_SECRET, { expiresIn:"7d" }); }
 
+function normalizeEmail(email){
+  return String(email || "").trim().toLowerCase();
+}
+
+function isValidEmail(email){
+  if (typeof email !== "string") return false;
+  const e = normalizeEmail(email);
+  if (e.length < 3 || e.length > 254) return false;
+
+  const at = e.indexOf("@");
+  if (at <= 0 || at !== e.lastIndexOf("@") || at === e.length - 1) return false;
+
+  const local = e.slice(0, at);
+  const domain = e.slice(at + 1);
+
+  if (local.length > 64) return false;
+  if (local.startsWith(".") || local.endsWith(".") || local.includes("..")) return false;
+
+  // Domain must have at least one dot and valid labels
+  if (!domain.includes(".")) return false;
+  const labels = domain.split(".");
+  if (labels.some(l => l.length === 0 || l.length > 63)) return false;
+  const labelRe = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+  if (!labels.every(l => labelRe.test(l))) return false;
+
+  // Basic sanity check for local part characters (allows common RFC characters without going full RFC)
+  const localRe = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
+  if (!localRe.test(local)) return false;
+
+  return true;
+}
+
+
 // Auth middleware
 function auth(req,res,next){
   const hdr = req.headers.authorization || "";
@@ -63,15 +96,17 @@ function auth(req,res,next){
 // ---- Rutas de autenticación ----
 app.post("/api/auth/register", (req, res) => {
   const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: "email y password requeridos" });
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !password) return res.status(400).json({ error: "email y password requeridos" });
+  if (!isValidEmail(normalizedEmail)) return res.status(400).json({ error: "Email inválido" });
   const password_hash = bcrypt.hashSync(password, 10);
   const sql = "INSERT INTO users (email, password_hash) VALUES (?, ?)";
-  db.run(sql, [email.trim().toLowerCase(), password_hash], function (err) {
+  db.run(sql, [normalizedEmail, password_hash], function (err) {
     if (err) {
       if (String(err.message).includes("UNIQUE")) return res.status(409).json({ error: "Email ya registrado" });
       return res.status(500).json({ error: err.message });
     }
-    const user = { id: this.lastID, email };
+    const user = { id: this.lastID, email: normalizedEmail };
     const token = signToken(user);
     res.status(201).json({ token, user });
   });
@@ -79,8 +114,10 @@ app.post("/api/auth/register", (req, res) => {
 
 app.post("/api/auth/login", (req,res) => {
   const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: "email y password requeridos" });
-  db.get("SELECT id, email, password_hash FROM users WHERE email = ?", [email.trim().toLowerCase()], (err, row) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !password) return res.status(400).json({ error: "email y password requeridos" });
+  if (!isValidEmail(normalizedEmail)) return res.status(400).json({ error: "Email inválido" });
+  db.get("SELECT id, email, password_hash FROM users WHERE email = ?", [normalizedEmail], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(401).json({ error: "Credenciales inválidas" });
     const ok = bcrypt.compareSync(password, row.password_hash);
