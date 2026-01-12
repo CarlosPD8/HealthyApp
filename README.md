@@ -44,7 +44,11 @@ Los datos quedan guardados junto con la fecha y hora, permitiendo consultar la e
         ```bash
         npm start
         ```
-
+- En **Linux:**
+  1. rm -rf node_modules package-lock.json
+  2. npm cache clean --force
+  3. npm install
+  4. npm start
 - Levantar servicio **frontend**:
     1. Abrir **cmd**
     2. Dirigirse a `HealthyApp\frontend`
