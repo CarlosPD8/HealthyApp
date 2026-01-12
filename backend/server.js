@@ -134,9 +134,9 @@ app.post("/api/entries", auth, (req, res) => {
   if (!Number.isFinite(weight) || !Number.isFinite(height)) {
     return res.status(400).json({ error: "weight y height deben ser números" });
   }
-  if (weight <= 2 || height <= 0 || height >= 3) {
+  if (weight <= 2 || weight > 300 || height <= 0 || height >= 3) {
   return res.status(400).json({
-    error: "Valores inválidos: peso > 2 kg, 0 m < altura < 3 m"
+    error: "Valores inválidos: 2 kg < peso ≤ 300 kg, 0 m < altura < 3 m"
   });
 }
   const sql = "INSERT INTO entries (user_id, weight, height) VALUES (?, ?, ?)";

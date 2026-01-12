@@ -142,8 +142,32 @@ function Dashboard() {
 
   async function onSubmit(e) {
     e.preventDefault(); setError('')
-    const payload = { weight: Number(weight), height: Number(height) }
-    if (!payload.weight || !payload.height) { setError('Introduce números válidos (>0).'); return }
+
+    const w = Number(weight)
+    const hRaw = Number(height)
+
+    // Bloquea NaN / Infinity
+    if (!Number.isFinite(w) || !Number.isFinite(hRaw)) {
+      setError('Introduce números válidos.')
+      return
+    }
+
+    // Permitir altura en metros (1.78) o centímetros (178)
+    const h = hRaw >= 3 ? hRaw / 100 : hRaw
+
+    // Reglas alineadas con backend
+    if (w <= 2 || w > 300) {
+      setError('El peso debe estar entre 2 y 300 kg.')
+      return
+    }
+    if (h <= 0 || h >= 3) {
+      setError('La altura debe ser menor de 3 metros (puedes poner 1.78 o 178).')
+      return
+    }
+
+    // Mantener compatibilidad: enviamos altura como la introduce el usuario
+    const payload = { weight: w, height: hRaw }
+
     try {
       const res = await fetch(`${API_URL}/api/entries`, {
         method: 'POST',
@@ -175,8 +199,16 @@ function Dashboard() {
           <form onSubmit={onSubmit} className="space-y-6">
             <div className="p-6 rounded-2xl shadow-xl border bg-gradient-to-r from-cyan-200 via-sky-200 to-indigo-200">
               <label className="mb-2 block font-medium">Peso (kg)</label>
-              <input type="number" step="0.1" min="0" value={weight} onChange={e => setWeight(e.target.value)}
-                placeholder="75.0" className="w-full px-4 py-2.5 rounded-xl bg-white/70 border focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black placeholder-black/50" />
+              <input
+                type="number"
+                step="0.1"
+                min="2.1"
+                max="300"
+                value={weight}
+                onChange={e => setWeight(e.target.value)}
+                placeholder="75.0"
+                className="w-full px-4 py-2.5 rounded-xl bg-white/70 border focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black placeholder-black/50"
+              />
             </div>
 
             <div className="p-6 rounded-2xl shadow-xl border bg-gradient-to-r from-pink-200 via-fuchsia-200 to-purple-200">
