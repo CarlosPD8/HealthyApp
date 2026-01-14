@@ -212,9 +212,9 @@ function Dashboard() {
             </div>
 
             <div className="p-6 rounded-2xl shadow-xl border bg-gradient-to-r from-pink-200 via-fuchsia-200 to-purple-200">
-              <label className="mb-2 block font-medium">Altura</label>
+              <label className="mb-2 block font-medium">Altura(m)</label>
               <input type="number" step="0.01" min="0" value={height} onChange={e => setHeight(e.target.value)}
-                placeholder="1.78 o 178" className="w-full px-4 py-2.5 rounded-xl bg-white/70 border focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black placeholder-black/50" />
+                placeholder="1.78m" className="w-full px-4 py-2.5 rounded-xl bg-white/70 border focus:outline-none focus:ring-2 focus:ring-indigo-400 text-black placeholder-black/50" />
             </div>
 
             <div className="p-6 rounded-2xl shadow-xl border bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 flex flex-col sm:flex-row items-center justify-between gap-3">
