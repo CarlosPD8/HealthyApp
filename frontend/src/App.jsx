@@ -54,8 +54,107 @@ function Register() {
   const nav = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
+  const [policy, setPolicy] = useState(null)
+  const [genLen, setGenLen] = useState(16)
+  const [genSets, setGenSets] = useState({ lower: true, upper: true, digits: true, symbols: true })
   useEffect(() => { if (isAuth) nav('/') }, [isAuth])
+
+  // Cargar política desde backend (para mostrar requisitos y límites)
+  useEffect(() => {
+    let alive = true
+    fetch(`${API_URL}/api/auth/policy`).then(r => r.ok ? r.json() : null).then(j => {
+      if (!alive || !j) return
+      setPolicy(j)
+      // Ajustar generador dentro de límites razonables
+      const min = Number(j.minLength || 12)
+      const max = Number(j.maxLength || 128)
+      setGenLen(prev => Math.min(max, Math.max(min, prev)))
+      setGenSets({
+        lower: !!j.allowLower,
+        upper: !!j.allowUpper,
+        digits: !!j.allowDigits,
+        symbols: !!j.allowSymbols,
+      })
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [])
+
+  function secureRandInt(maxExclusive) {
+    // crypto.getRandomValues con rechazo para evitar sesgo
+    const a = new Uint32Array(1)
+    const limit = Math.floor(0xFFFFFFFF / maxExclusive) * maxExclusive
+    let x
+    do {
+      window.crypto.getRandomValues(a)
+      x = a[0]
+    } while (x >= limit)
+    return x % maxExclusive
+  }
+
+  function generatePassword(length, sets) {
+    const cs = {
+      lower: 'abcdefghijklmnopqrstuvwxyz',
+      upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      digits: '0123456789',
+      symbols: '!@#$%^&*()-_=+[]{};:,.?/\\|~`"\'<>',
+    }
+    const enabled = Object.entries(sets).filter(([, v]) => v).map(([k]) => k)
+    if (enabled.length === 0) throw new Error('Selecciona al menos un tipo de caracteres para generar la contraseña.')
+    if (length < enabled.length) throw new Error('La longitud debe ser >= al número de conjuntos seleccionados.')
+
+    // Asegurar al menos 1 de cada conjunto habilitado
+    const out = []
+    for (const k of enabled) out.push(cs[k][secureRandInt(cs[k].length)])
+    const all = enabled.map(k => cs[k]).join('')
+    for (let i = out.length; i < length; i++) out.push(all[secureRandInt(all.length)])
+
+    // Barajar
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = secureRandInt(i + 1)
+      ;[out[i], out[j]] = [out[j], out[i]]
+    }
+    return out.join('')
+  }
+
+  function onGenerate() {
+    setError('')
+    setCopied(false)
+    try {
+      const min = Number(policy?.minLength || 12)
+      const max = Number(policy?.maxLength || 128)
+      const len = Math.min(max, Math.max(min, Number(genLen)))
+      setGenLen(len)
+      setPassword(generatePassword(len, genSets))
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  async function onCopyPassword() {
+    try {
+      if (!password) throw new Error('Primero genera o escribe una contraseña.')
+      await navigator.clipboard.writeText(password)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch (e) {
+      // Fallback simple si el navegador bloquea clipboard
+      try {
+        const ta = document.createElement('textarea')
+        ta.value = password
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+      } catch {
+        setError(e.message || 'No se pudo copiar la contraseña.')
+      }
+    }
+  }
 
   async function onSubmit(e) {
     e.preventDefault(); setError('')
@@ -74,6 +173,66 @@ function Register() {
     <div className="min-h-dvh flex items-center justify-center p-6">
       <div className="w-full max-w-md p-6 rounded-2xl shadow-xl border bg-gradient-to-r from-pink-200 via-fuchsia-200 to-purple-200 text-black">
         <h1 className="text-2xl font-semibold mb-4">Crear cuenta</h1>
+
+        <div className="mb-4 p-4 rounded-xl bg-white/60 border">
+          <div className="font-medium">Generador de contraseña (opcional)</div>
+          <div className="text-sm text-black/70 mt-1">
+            Elige longitud y tipos de caracteres. El backend validará la política al registrarte.
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <label className="text-sm">
+              Longitud
+              <input
+                type="number"
+                min={policy?.minLength || 12}
+                max={policy?.maxLength || 128}
+                value={genLen}
+                onChange={e => setGenLen(e.target.value)}
+                className="mt-1 w-full px-3 py-2 rounded-xl bg-white/70 border text-black"
+              />
+            </label>
+            <div className="text-sm">
+              <div className="mb-1">Tipos</div>
+              <div className="space-y-1">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={genSets.lower} disabled={!policy?.allowLower}
+                    onChange={e => setGenSets(s => ({ ...s, lower: e.target.checked }))} />
+                  minúsculas
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={genSets.upper} disabled={!policy?.allowUpper}
+                    onChange={e => setGenSets(s => ({ ...s, upper: e.target.checked }))} />
+                  mayúsculas
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={genSets.digits} disabled={!policy?.allowDigits}
+                    onChange={e => setGenSets(s => ({ ...s, digits: e.target.checked }))} />
+                  números
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={genSets.symbols} disabled={!policy?.allowSymbols}
+                    onChange={e => setGenSets(s => ({ ...s, symbols: e.target.checked }))} />
+                  símbolos
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onClick={onGenerate}
+            className="mt-3 w-full px-4 py-2 rounded-xl text-white font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+            Generar contraseña segura
+          </button>
+
+          {policy && (
+            <div className="mt-3 text-xs text-black/70">
+              Requisitos: longitud {policy.minLength}–{policy.maxLength}. Debe incluir:
+              {' '}{policy.requireLower ? 'minúscula, ' : ''}{policy.requireUpper ? 'mayúscula, ' : ''}{policy.requireDigits ? 'número, ' : ''}{policy.requireSymbols ? 'símbolo, ' : ''}
+              y usar solo caracteres permitidos.
+            </div>
+          )}
+        </div>
+
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block mb-1">Email</label>
@@ -87,13 +246,35 @@ function Register() {
           </div>
           <div>
             <label className="block mb-1">Contraseña</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-2 rounded-xl bg-white/70 border text-black"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
+            <div className="flex gap-2 items-stretch">
+              <div className="relative flex-1">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2 rounded-xl bg-white/70 border text-black pr-24"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setCopied(false) }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm px-3 py-1 rounded-lg bg-white/70 border"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                >
+                  {showPassword ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={onCopyPassword}
+                className="px-4 py-2 rounded-xl bg-white/70 border text-sm"
+              >
+                {copied ? 'Copiada ✓' : 'Copiar'}
+              </button>
+            </div>
+            <div className="mt-1 text-xs text-black/70">
+              Puedes mostrarla para guardarla en un gestor y copiarla al portapapeles.
+            </div>
           </div>
           {error && <div className="p-3 rounded-lg bg-rose-100 text-rose-900">{error}</div>}
           <button

@@ -44,6 +44,40 @@ Los datos quedan guardados junto con la fecha y hora, permitiendo consultar la e
         ```bash
         npm start
         ```
+
+### 🔐 Seguridad de contraseñas (implementación del ejercicio)
+
+La API implementa:
+
+- **Multiusuario** (ya existía).
+- **Política configurable** de contraseña (longitud y tipos de caracteres) + endpoint `GET /api/auth/policy`.
+- **Almacenamiento seguro** usando **KDF scrypt** + **salt** por usuario.
+- **Pepper (EXTRA)** mediante HMAC con secreto del servidor (`PASSWORD_PEPPER`).
+- **Bloqueo por fallos repetidos (EXTRA)** (por defecto: 5 fallos → 15 min).
+
+Variables de entorno útiles (opcional):
+
+```bash
+# OBLIGATORIO en producción
+PASSWORD_PEPPER="<valor largo y aleatorio>"
+
+# Política
+PASSWORD_MIN_LENGTH=12
+PASSWORD_MAX_LENGTH=128
+PASSWORD_ALLOW_LOWER=true
+PASSWORD_ALLOW_UPPER=true
+PASSWORD_ALLOW_DIGITS=true
+PASSWORD_ALLOW_SYMBOLS=true
+
+# Lockout
+AUTH_MAX_FAILURES=5
+AUTH_LOCK_MINUTES=15
+
+# KDF scrypt (coste)
+SCRYPT_N=32768
+SCRYPT_R=8
+SCRYPT_P=1
+```
 - En **Linux:**
   1. rm -rf node_modules package-lock.json
   2. npm cache clean --force
