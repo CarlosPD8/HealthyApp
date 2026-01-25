@@ -12,12 +12,12 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, "data.db");
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-super-cambia-esto";
+const JWT_SECRET = process.env.JWT_SECRET || "Q7!aX0%M$K2n#8ZrP@HfE9WJY1sD5L6C";
 
 // ---- Password hardening ("estado del arte") ----
 // Pepper (EXTRA): secreto a nivel de servidor, NO se guarda en BD.
 // En producción debe venir por variable de entorno.
-const PASSWORD_PEPPER = process.env.PASSWORD_PEPPER || "dev-pepper-cambia-esto";
+const PASSWORD_PEPPER = process.env.PASSWORD_PEPPER || "8F#kPz3!Lr9w@YvD7A0sM2qXcB$E%N1H";
 
 // Política de contraseña (longitud + tipos de caracteres permitidos)
 // Nota: además de validar, el front ofrece un generador para que el usuario elija longitud y conjuntos.
