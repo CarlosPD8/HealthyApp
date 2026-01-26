@@ -6,18 +6,31 @@ import { fileURLToPath } from "url";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import dotenv from "dotenv";
+dotenv.config();
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, "data.db");
-const JWT_SECRET = process.env.JWT_SECRET || "Q7!aX0%M$K2n#8ZrP@HfE9WJY1sD5L6C";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET no está definido en el entorno");
+}
+
 
 // ---- Password hardening ("estado del arte") ----
 // Pepper (EXTRA): secreto a nivel de servidor, NO se guarda en BD.
-// En producción debe venir por variable de entorno.
-const PASSWORD_PEPPER = process.env.PASSWORD_PEPPER || "8F#kPz3!Lr9w@YvD7A0sM2qXcB$E%N1H";
+//variable de entorno pepper.
+const PASSWORD_PEPPER = process.env.PASSWORD_PEPPER;
+
+if (!PASSWORD_PEPPER) {
+  throw new Error("PASSWORD_PEPPER no está definido en el entorno");
+}
+
 
 // Política de contraseña (longitud + tipos de caracteres permitidos)
 // Nota: además de validar, el front ofrece un generador para que el usuario elija longitud y conjuntos.
@@ -81,7 +94,7 @@ CREATE TABLE IF NOT EXISTS entries (
 `;
 db.serialize(() => db.exec(initSQL));
 
-// --- Migración suave (por si la BD ya existía sin columnas extra) ---
+// --- Migración suave ---
 function ensureUserColumns() {
   db.all("PRAGMA table_info(users)", (err, cols) => {
     if (err) return;
