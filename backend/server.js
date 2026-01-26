@@ -42,7 +42,7 @@ const PASSWORD_POLICY = {
   allowUpper: process.env.PASSWORD_ALLOW_UPPER !== "false",
   allowDigits: process.env.PASSWORD_ALLOW_DIGITS !== "false",
   allowSymbols: process.env.PASSWORD_ALLOW_SYMBOLS !== "false",
-  // Requisitos mínimos (puedes ajustarlos según apuntes)
+  // Requisitos mínimos
   requireLower: process.env.PASSWORD_REQUIRE_LOWER !== "false",
   requireUpper: process.env.PASSWORD_REQUIRE_UPPER !== "false",
   requireDigits: process.env.PASSWORD_REQUIRE_DIGITS !== "false",
