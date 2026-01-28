@@ -44,6 +44,21 @@ Los datos quedan guardados junto con la fecha y hora, permitiendo consultar la e
         ```bash
         npm start
         ```
+        
+- En **Linux:**
+  1. rm -rf node_modules package-lock.json
+  2. npm cache clean --force
+  3. npm install
+  4. npm start
+- Levantar servicio **frontend**:
+    1. Abrir **cmd**
+    2. Dirigirse a `HealthyApp\frontend`
+    3. Ejecutar los comandos:
+
+        ```bash
+        npm install
+        npm run dev
+        ```
 
 ### 🔐 Seguridad de contraseñas (implementación del ejercicio)
 
@@ -78,20 +93,6 @@ SCRYPT_N=32768
 SCRYPT_R=8
 SCRYPT_P=1
 ```
-- En **Linux:**
-  1. rm -rf node_modules package-lock.json
-  2. npm cache clean --force
-  3. npm install
-  4. npm start
-- Levantar servicio **frontend**:
-    1. Abrir **cmd**
-    2. Dirigirse a `HealthyApp\frontend`
-    3. Ejecutar los comandos:
-
-        ```bash
-        npm install
-        npm run dev
-        ```
 
 ## 🧪 Ejecución de Tests
 
