@@ -1,8 +1,12 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from './auth'
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+console.log("VITE_RECAPTCHA_SITE_KEY =", import.meta.env.VITE_RECAPTCHA_SITE_KEY)
+console.log("Todos los env:", import.meta.env)
 
 // ---- Páginas públicas ----
 function Login() {
@@ -11,20 +15,41 @@ function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const { executeRecaptcha } = useGoogleReCaptcha()
+  const siteKey = RECAPTCHA_SITE_KEY
 
   useEffect(() => { if (isAuth) nav('/') }, [isAuth])
   async function onSubmit(e) {
-    e.preventDefault(); setError('')
-    try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-      const j = await res.json()
-      if (!res.ok) throw new Error(j.error || 'Error de login')
-      login(j); nav('/')
-    } catch (err) { setError(err.message) }
+  e.preventDefault(); setError('')
+  try {
+    if (!executeRecaptcha) throw new Error('reCAPTCHA no está listo. Recarga la página.')
+
+    const captchaToken = await executeRecaptcha('login')
+
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, captchaToken })
+    })
+
+    const j = await res.json()
+    if (!res.ok) throw new Error(j.error || 'Error de login')
+    login(j); nav('/')
+  } catch (err) {
+    setError(err.message)
   }
+}
+
+  if (!siteKey) {
+  return (
+    <div className="min-h-dvh flex items-center justify-center p-6">
+      <div className="w-full max-w-md p-6 rounded-2xl shadow-xl border bg-amber-100 text-amber-900">
+        Falta configurar <b>VITE_RECAPTCHA_SITE_KEY</b> en <b>frontend/.env</b>
+      </div>
+    </div>
+  )
+}
+
   return (
     <div className="min-h-dvh flex items-center justify-center p-6">
       <div className="w-full max-w-md p-6 rounded-2xl shadow-xl border bg-gradient-to-r from-indigo-200 via-sky-200 to-cyan-200 text-black">
@@ -60,6 +85,9 @@ function Register() {
   const [policy, setPolicy] = useState(null)
   const [genLen, setGenLen] = useState(16)
   const [genSets, setGenSets] = useState({ lower: true, upper: true, digits: true, symbols: true })
+  const { executeRecaptcha } = useGoogleReCaptcha()
+  const siteKey = RECAPTCHA_SITE_KEY
+
   useEffect(() => { if (isAuth) nav('/') }, [isAuth])
 
   // Cargar política desde backend (para mostrar requisitos y límites)
@@ -81,6 +109,16 @@ function Register() {
     }).catch(() => {})
     return () => { alive = false }
   }, [])
+
+    if (!siteKey) {
+  return (
+    <div className="min-h-dvh flex items-center justify-center p-6">
+      <div className="w-full max-w-md p-6 rounded-2xl shadow-xl border bg-amber-100 text-amber-900">
+        Falta configurar <b>VITE_RECAPTCHA_SITE_KEY</b> en <b>frontend/.env</b>
+      </div>
+    </div>
+  )
+}
 
   function secureRandInt(maxExclusive) {
     // crypto.getRandomValues con rechazo para evitar sesgo
@@ -156,18 +194,25 @@ function Register() {
     }
   }
 
-  async function onSubmit(e) {
-    e.preventDefault(); setError('')
-    try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-      const j = await res.json()
-      if (!res.ok) throw new Error(j.error || 'Error de registro')
-      login(j); nav('/')
-    } catch (err) { setError(err.message) }
-  }
+ async function onSubmit(e) {
+  e.preventDefault(); setError('')
+  try {
+    if (!executeRecaptcha) throw new Error('reCAPTCHA no está listo. Recarga la página.')
+
+    const captchaToken = await executeRecaptcha('register')
+
+    const res = await fetch(`${API_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, captchaToken })
+    })
+
+    const j = await res.json()
+    if (!res.ok) throw new Error(j.error || 'Error de registro')
+    login(j); nav('/')
+  } catch (err) { setError(err.message) }
+}
+
 
   return (
     <div className="min-h-dvh flex items-center justify-center p-6">
@@ -464,11 +509,17 @@ function PrivateRoute({ children }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <GoogleReCaptchaProvider
+      reCaptchaKey={RECAPTCHA_SITE_KEY}
+      scriptProps={{ async: true, defer: true }}
+    >
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </GoogleReCaptchaProvider>
   )
 }
+

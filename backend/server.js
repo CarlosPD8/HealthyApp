@@ -7,19 +7,51 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import helmet from "helmet";
+
 dotenv.config();
 
+const app = express(); // ✅ SOLO UNA VEZ, y arriba
+
+app.use(express.json());
+app.use(cors());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, "data.db");
-const JWT_SECRET = process.env.JWT_SECRET;
 
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET no está definido en el entorno");
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JWT_SECRET no está definido en el entorno");
+
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+  app.use(
+    helmet.hsts({
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: false,
+    })
+  );
 }
+
+app.use(
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://www.google.com", "https://www.gstatic.com"],
+      frameSrc: ["'self'", "https://www.google.com", "https://www.gstatic.com"],
+      connectSrc: ["'self'", "http://localhost:5173", "ws://localhost:5173", "http://localhost:3001"],
+      imgSrc: ["'self'", "data:"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  })
+);
 
 
 // ---- Password hardening ("estado del arte") ----
@@ -109,7 +141,7 @@ function ensureUserColumns() {
 }
 ensureUserColumns();
 
-const app = express();
+
 app.use(cors());
 app.use(express.json());
 
