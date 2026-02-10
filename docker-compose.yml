@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    expose:
+      - "3001"
+    env_file:
+      - ./backend/.env
+
+  waf:
+    image: owasp/modsecurity-crs:4-nginx-alpine-202602050102
+    ports:
+      - "8080:8080"
+    environment:
+      - BACKEND=http://backend:3001
+      - MODSEC_RULE_ENGINE=On
+    volumes:
+      - ./waf/default.conf.template:/etc/nginx/templates/conf.d/default.conf.template:ro
+      - ./waf/modsecurity-override.conf.template:/etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template:ro
+      - ./waf/custom-exclusions.conf.template:/etc/nginx/templates/modsecurity.d/custom-exclusions.conf.template:ro
+      - ./waf/outbound-exfiltration.conf.template:/etc/nginx/templates/modsecurity.d/outbound-exfiltration.conf.template:ro
+    depends_on:
+      - backend

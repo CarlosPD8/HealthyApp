@@ -5,8 +5,6 @@ import { GoogleReCaptchaProvider, useGoogleReCaptcha } from 'react-google-recapt
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
-console.log("VITE_RECAPTCHA_SITE_KEY =", import.meta.env.VITE_RECAPTCHA_SITE_KEY)
-console.log("Todos los env:", import.meta.env)
 
 // ---- Páginas públicas ----
 function Login() {

@@ -1,0 +1,19 @@
+############################################################
+# Outbound filtering / Anti-exfiltration (fase 4)
+# Objetivo: detectar fugas de datos / info sensible en responses
+############################################################
+
+# 1) Detectar stack traces / errores internos comunes
+SecRule RESPONSE_BODY "@rx (?i)(stack trace|referenceerror:|typeerror:|sequelize|sqlite3::|unhandledpromise|at\s+[A-Za-z0-9_]+\s*\()" \
+  "id:110001,phase:4,log,deny,status:500,msg:'Possible stack trace / internal error disclosure'"
+
+# 2) Detectar “.env” / secretos comunes (heurístico)
+SecRule RESPONSE_BODY "@rx (?i)(JWT_SECRET|ACCESS_TOKEN|REFRESH_TOKEN|API_KEY|PRIVATE_KEY|BEGIN\s+PRIVATE\s+KEY)" \
+  "id:110002,phase:4,log,deny,status:500,msg:'Possible secret leakage in response body'"
+
+# 3) Detectar fuga tipo /etc/passwd (muy improbable pero buen ejercicio)
+SecRule RESPONSE_BODY "@rx (?m)^root:.*:0:0:" \
+  "id:110003,phase:4,log,deny,status:500,msg:'Possible /etc/passwd content leakage'"
+
+# 4) BONUS: si quieres marcar (no bloquear) en DetectionOnly
+# Si estás en DetectionOnly, deny no bloqueará; si cambias a On, sí.

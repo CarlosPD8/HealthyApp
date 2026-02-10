@@ -1,0 +1,27 @@
+############################################################
+# Exclusiones (tuning) - HealthyApp
+# Objetivo: reducir falsos positivos sin apagar el WAF
+############################################################
+
+# Ejemplo 1: Login (POST) suele disparar reglas por JSON/credenciales
+# Cambia el ID por el que veas en audit log (p.ej. 942100 / 920274 / etc.)
+SecRule REQUEST_URI "@beginsWith /api/auth/login" \
+  "id:100100,phase:1,pass,nolog,chain"
+  SecRule REQUEST_METHOD "@streq POST" \
+    "t:none,ctl:ruleRemoveById=942100"
+
+# Ejemplo 2: Registro (POST)
+SecRule REQUEST_URI "@beginsWith /api/auth/register" \
+  "id:100101,phase:1,pass,nolog,chain"
+  SecRule REQUEST_METHOD "@streq POST" \
+    "t:none,ctl:ruleRemoveById=920274"
+
+# Ejemplo 3 (mejor que quitar IDs): quitar un TARGET concreto de una regla
+# Cuando identifiques que el falso positivo está en un campo (ej. password)
+# (Este patrón es el “pro”: mantienes la regla, pero no inspecciona ese campo)
+#
+# SecRuleUpdateTargetById 942100 "!ARGS:password"
+# SecRuleUpdateTargetById 942100 "!REQUEST_BODY"
+#
+# Nota: Para JSON, a veces CRS ve datos en REQUEST_BODY/ARGS dependiendo del parser.
+# Esto lo afinamos tras ver un audit log real.

@@ -1,0 +1,49 @@
+############################################################
+# ModSecurity - Overrides para CRS Docker (nginx)
+############################################################
+
+# 1) Motor: DetectionOnly -> On (blocking)
+#    Controla esto desde docker-compose con:
+#    MODSEC_RULE_ENGINE=DetectionOnly  o  MODSEC_RULE_ENGINE=On
+SecRuleEngine ${MODSEC_RULE_ENGINE}
+
+# 2) Auditoría: útil para tuning (falsos positivos)
+SecAuditEngine On
+SecAuditLogType Serial
+SecAuditLogFormat JSON
+SecAuditLog /tmp/modsecurity/audit.json
+SecAuditLogParts ABIJDEFHZ
+
+
+# 3) Request body (necesario para JSON de APIs)
+SecRequestBodyAccess On
+SecRequestBodyLimit 13107200
+SecRequestBodyNoFilesLimit 131072
+SecRequestBodyLimitAction Reject
+
+# 4) Response body (para outbound / anti-exfil)
+SecResponseBodyAccess On
+SecResponseBodyMimeType text/plain text/html text/xml application/json
+SecResponseBodyLimit 1048576
+SecResponseBodyLimitAction ProcessPartial
+
+# 5) Reglas propias (se procesan además de CRS)
+Include /etc/nginx/modsecurity.d/custom-exclusions.conf
+Include /etc/nginx/modsecurity.d/outbound-exfiltration.conf
+
+
+############################################################
+# Ajustes CRS opcionales (recomendación inicial “pro”)
+############################################################
+
+# Paranoia level base (1 = menos falsos positivos)
+# Esto normalmente se configura en CRS_SETUP; aquí lo dejamos
+# como ajuste directo de TX para que sea evidente/documentable.
+SecAction "id:900000,phase:1,pass,nolog,setvar:tx.paranoia_level=1"
+
+# Umbral de bloqueo por anomalía (si estás en On)
+# En DetectionOnly no bloqueará, pero seguirá “marcando” y logueando.
+SecAction "id:900001,phase:1,pass,nolog,setvar:tx.inbound_anomaly_score_threshold=5"
+SecAction "id:900002,phase:1,pass,nolog,setvar:tx.outbound_anomaly_score_threshold=4"
+
+
