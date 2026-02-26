@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, "data.db");
 
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error("JWT_SECRET no está definido en el entorno");
+if (!JWT_SECRET) throw new Error("JWT_SECRET queda por definir");
 
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
