@@ -3,11 +3,11 @@ import cors from "cors";
 import sqlite3 from "sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import helmet from "helmet";
+import { auth, requireRole, signToken } from "./auth.js";
 
 dotenv.config();
 
@@ -21,9 +21,6 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, "data.db");
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) throw new Error("JWT_SECRET queda por definir");
 
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
@@ -110,6 +107,7 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
   failed_attempts INTEGER NOT NULL DEFAULT 0,
   lock_until TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -131,6 +129,14 @@ function ensureUserColumns() {
   db.all("PRAGMA table_info(users)", (err, cols) => {
     if (err) return;
     const names = new Set((cols || []).map(c => c.name));
+    // Cambio de seguridad/RBAC: migración automática para rol por defecto user.
+    if (!names.has("role")) {
+      db.run("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'", () => {
+        db.run("UPDATE users SET role = 'user' WHERE role IS NULL OR TRIM(role) = ''");
+      });
+    } else {
+      db.run("UPDATE users SET role = 'user' WHERE role IS NULL OR TRIM(role) = ''");
+    }
     if (!names.has("failed_attempts")) {
       db.run("ALTER TABLE users ADD COLUMN failed_attempts INTEGER NOT NULL DEFAULT 0");
     }
@@ -147,7 +153,6 @@ app.use(express.json());
 
 // Utils
 function toNumber(v){ if(v===null||v===undefined||v==="") return NaN; const n=Number(v); return Number.isFinite(n)?n:NaN; }
-function signToken(user){ return jwt.sign({ id:user.id, email:user.email }, JWT_SECRET, { expiresIn:"7d" }); }
 
 function normalizeEmail(email){
   return String(email || "").trim().toLowerCase();
@@ -287,20 +292,6 @@ function isValidEmail(email){
 }
 
 
-// Auth middleware
-function auth(req,res,next){
-  const hdr = req.headers.authorization || "";
-  const token = hdr.startsWith("Bearer ") ? hdr.slice(7) : null;
-  if(!token) return res.status(401).json({ error:"No autorizado" });
-  try{
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = { id: payload.id, email: payload.email };
-    next();
-  }catch(e){
-    return res.status(401).json({ error:"Token inválido o expirado" });
-  }
-}
-
 // ---- Rutas de autenticación ----
 // Para el front: exponer política actual (longitud y conjuntos permitidos/requeridos)
 app.get("/api/auth/policy", (_req, res) => {
@@ -329,13 +320,14 @@ app.post("/api/auth/register", async (req, res) => {
 
   try {
     const password_hash = await hashPassword(password);
-    const sql = "INSERT INTO users (email, password_hash) VALUES (?, ?)";
-    db.run(sql, [normalizedEmail, password_hash], function (err) {
+    // Cambio de seguridad/RBAC: todo registro se crea como user.
+    const sql = "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)";
+    db.run(sql, [normalizedEmail, password_hash, "user"], function (err) {
       if (err) {
         if (String(err.message).includes("UNIQUE")) return res.status(409).json({ error: "Email ya registrado" });
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: "Error interno del servidor" });
       }
-      const user = { id: this.lastID, email: normalizedEmail };
+      const user = { id: this.lastID, email: normalizedEmail, role: "user" };
       const token = signToken(user);
       res.status(201).json({ token, user });
     });
@@ -351,10 +343,10 @@ app.post("/api/auth/login", (req, res) => {
   if (!isValidEmail(normalizedEmail)) return res.status(400).json({ error: "Email inválido" });
 
   db.get(
-    "SELECT id, email, password_hash, failed_attempts, lock_until FROM users WHERE email = ?",
+    "SELECT id, email, role, password_hash, failed_attempts, lock_until FROM users WHERE email = ?",
     [normalizedEmail],
     async (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) return res.status(500).json({ error: "Error interno del servidor" });
       if (!row) return res.status(401).json({ error: "Credenciales inválidas" });
 
       // Lockout (EXTRA)
@@ -394,8 +386,9 @@ app.post("/api/auth/login", (req, res) => {
         }
       }
 
-      const token = signToken({ id: row.id, email: row.email });
-      res.json({ token, user: { id: row.id, email: row.email } });
+      const role = row.role || "user";
+      const token = signToken({ id: row.id, email: row.email, role });
+      res.json({ token, user: { id: row.id, email: row.email, role } });
     }
   );
 });
@@ -414,7 +407,7 @@ app.post("/api/entries", auth, (req, res) => {
 }
   const sql = "INSERT INTO entries (user_id, weight, height) VALUES (?, ?, ?)";
   db.run(sql, [req.user.id, weight, height], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return res.status(500).json({ error: "Error interno del servidor" });
     res.status(201).json({ id: this.lastID, weight, height, created_at: new Date().toISOString() });
   });
 });
@@ -422,7 +415,15 @@ app.post("/api/entries", auth, (req, res) => {
 app.get("/api/entries", auth, (_req, res) => {
   const sql = "SELECT id, weight, height, created_at FROM entries WHERE user_id = ? ORDER BY datetime(created_at) DESC, id DESC";
   db.all(sql, [_req.user.id], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return res.status(500).json({ error: "Error interno del servidor" });
+    res.json(rows);
+  });
+});
+
+// Cambio de seguridad/RBAC: ruta exclusiva para administradores.
+app.get("/api/admin/users", auth, requireRole("admin"), (_req, res) => {
+  db.all("SELECT email, role FROM users ORDER BY email ASC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: "Error interno del servidor" });
     res.json(rows);
   });
 });
@@ -449,5 +450,3 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`API escuchando en http://localhost:${PORT}`);
   });
 }
-
-
