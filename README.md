@@ -1,123 +1,135 @@
+# Aplicacion Web de Registro Diario de Peso, Altura e IMC
 
-#  Aplicación Web de Registro Diario de Peso, Altura e IMC
+Aplicacion web para registrar peso y altura, calcular automaticamente el IMC y consultar el historial de registros.
 
-Aplicación web que permite registrar el peso y la altura de un usuario, calculando automáticamente el Índice de Masa Corporal (IMC).  
-Los datos quedan guardados junto con la fecha y hora, permitiendo consultar la evolución a lo largo del tiempo.  
+## Caracteristicas Principales
 
+- Registro diario de peso y altura
+- Calculo automatico del IMC
+- Guardado de fecha y hora del registro
+- Visualizacion del historial completo
+- Autenticacion de usuarios
+- Documentacion OpenAPI con Swagger UI
 
-## 🚀 Características Principales
+## Tecnologias Utilizadas
 
-- Registro diario de **peso y altura**.  
-- Cálculo automático del **IMC (Índice de Masa Corporal)**.  
-- Guardado de **fecha y hora** del registro.  
-- **Restricción diaria**: solo un registro por día.  
-- Visualización del **historial completo** de datos.  
-- Interfaz sencilla y visual.
-- 
-## 🧠 Tecnologías Utilizadas
+- Frontend: React, Vite y Tailwind
+- Backend: Express
+- Base de datos: SQLite
+- Proteccion perimetral: OWASP ModSecurity CRS con Nginx
+- Contenedores: Docker Compose
 
-- **Frontend:** React con vite y Tailwind
-- **Base de datos:** SQLite
-- **Control de versiones:** Git y GitHub
+## Mockups y Capturas
 
-## 🖥️ Mockups y Capturas
-### Pantalla principal (Registro diario)
+### Pantalla principal
 ![Mockup Pantalla 1](docs/assets/pantalla%20principal.png)
 
 ### Pantalla de registro
 ![Mockup Pantalla 2](docs/assets/pantalla%20de%20registro.png)
+
 ### Pantalla de inicio de sesion
 ![Mockup Pantalla 3](docs/assets/pantalla%20inicio%20de%20sesion.png)
 
-## 🔄 Diagrama de flujo
+## Diagrama de flujo
+
 ![Diagrama de Secuencia](docs/mockups/Diagrama%20de%20comportamiento.png)
 
+## Instalacion y Ejecucion
 
-## 🧩 Instalación y Ejecución
+### Opcion recomendada
 
-- Descarga la carpeta comprimida **HealthyApp.zip**  
-- Levantar servicio **backend**:
-    1. Abrir **cmd**
-    2. Dirigirse a `HealthyApp\backend`
-    3. Ejecutar el comando:
+Levantar backend y WAF con Docker Compose, y el frontend con Vite.
 
-        ```bash
-        npm start
-        ```
-        
-- En **Linux:**
-  1. rm -rf node_modules package-lock.json
-  2. npm cache clean --force
-  3. npm install
-  4. npm start
-- Levantar servicio **frontend**:
-    1. Abrir **cmd**
-    2. Dirigirse a `HealthyApp\frontend`
-    3. Ejecutar los comandos:
+### 1. Levantar backend + WAF
 
-        ```bash
-        npm install
-        npm run dev
-        ```
+Desde la raiz del proyecto:
 
-### 🔐 Seguridad de contraseñas (implementación del ejercicio)
+```bash
+docker compose up --build
+```
+
+Esto levanta:
+
+- `backend`: API Express
+- `waf`: Nginx + ModSecurity delante de la API
+
+### 2. Levantar frontend
+
+En otra terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## URLs de acceso
+
+- Frontend: `http://localhost:5173`
+- API a traves del WAF: `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/api/docs`
+- OpenAPI JSON: `http://localhost:8080/api/openapi.json`
+
+## Notas importantes
+
+- El backend escucha dentro del contenedor en `3001`, pero desde el navegador debes entrar por `8080`, que es el puerto publicado del WAF.
+- Si `8080` esta ocupado por otra app, por otro proyecto Docker o por Burp Suite, primero libera ese puerto.
+- Si cambias configuracion del backend o del WAF, vuelve a reconstruir con `docker compose up --build`.
+
+## Seguridad de contraseñas
 
 La API implementa:
 
-- **Multiusuario** (ya existía).
-- **Política configurable** de contraseña (longitud y tipos de caracteres) + endpoint `GET /api/auth/policy`.
-- **Almacenamiento seguro** usando **KDF scrypt** + **salt** por usuario.
-- **Pepper (EXTRA)** mediante HMAC con secreto del servidor (`PASSWORD_PEPPER`).
-- **Bloqueo por fallos repetidos (EXTRA)** (por defecto: 5 fallos → 15 min).
+- Multiusuario
+- Politica configurable de contrasenas con endpoint `GET /api/auth/policy`
+- Almacenamiento seguro con `scrypt` y `salt` por usuario
+- Pepper mediante `PASSWORD_PEPPER`
+- Bloqueo temporal por fallos repetidos
 
-Variables de entorno útiles (opcional):
+Variables de entorno utiles:
 
 ```bash
-# OBLIGATORIO en producción
 PASSWORD_PEPPER="<valor largo y aleatorio>"
-
-# Política
 PASSWORD_MIN_LENGTH=12
 PASSWORD_MAX_LENGTH=128
 PASSWORD_ALLOW_LOWER=true
 PASSWORD_ALLOW_UPPER=true
 PASSWORD_ALLOW_DIGITS=true
 PASSWORD_ALLOW_SYMBOLS=true
-
-# Lockout
 AUTH_MAX_FAILURES=5
 AUTH_LOCK_MINUTES=15
-
-# KDF scrypt (coste)
 SCRYPT_N=32768
 SCRYPT_R=8
 SCRYPT_P=1
 ```
 
-## 🧪 Ejecución de Tests
+## Documentacion Swagger
 
--  Para ejecutar los test del **backend**:
-    1. Abrir **cmd**
-    2. Dirigirse a `HealthyApp\backend`
-    3. Ejecutar el comando:
+La documentacion de la API esta disponible en:
 
-```bash
-  npm run test
-```
+- Swagger UI: `http://localhost:8080/api/docs`
+- OpenAPI JSON: `http://localhost:8080/api/openapi.json`
 
-- Para ejecutar los test del **frontend**:
-    1. Abrir **cmd**
-    2. Dirigirse a `HealthyApp\frontend`
-    3. Ejecutar el comando:
+Si quieres importarla en SwaggerHub o Swagger Editor, usa la URL del `openapi.json`.
+
+## Ejecucion de Tests
+
+### Backend
 
 ```bash
-  npm run cy:run
+cd backend
+npm run test
 ```
 
-- Si queremos ver la ejecución de los test de manera mas visual podemos ejecutar el comando:
+### Frontend
 
 ```bash
-  npm run cy:open
+cd frontend
+npm run cy:run
 ```
 
-Con este comando utilizamos **Cypress**, una herramienta de testing end-to-end que nos permite automatizar pruebas que simulan la interacción real de un usuario con la aplicación en el navegador.
+Para abrir Cypress en modo visual:
+
+```bash
+npm run cy:open
+```
