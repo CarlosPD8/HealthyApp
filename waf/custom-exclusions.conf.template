@@ -25,3 +25,13 @@ SecRule REQUEST_URI "@beginsWith /api/auth/register" \
 #
 # Nota: Para JSON, a veces CRS ve datos en REQUEST_BODY/ARGS dependiendo del parser.
 # Esto lo afinamos tras ver un audit log real.
+
+# Swagger/OpenAPI docs: evitar falsos positivos del navegador/analytics sobre cookies.
+SecRule REQUEST_URI "@beginsWith /api/docs" \
+  "id:100102,phase:1,pass,nolog,ctl:ruleRemoveById=942290,ctl:ruleRemoveById=949110,ctl:ruleRemoveTargetById=942290;REQUEST_COOKIES"
+
+SecRule REQUEST_URI "@streq /api/openapi.json" \
+  "id:100103,phase:1,pass,nolog,ctl:ruleRemoveById=942290,ctl:ruleRemoveById=949110,ctl:ruleRemoveTargetById=942290;REQUEST_COOKIES"
+
+SecRule REQUEST_URI "@streq /favicon.ico" \
+  "id:100104,phase:1,pass,nolog,ctl:ruleRemoveById=942290,ctl:ruleRemoveById=949110,ctl:ruleRemoveTargetById=942290;REQUEST_COOKIES"

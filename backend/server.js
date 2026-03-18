@@ -3,11 +3,13 @@ import cors from "cors";
 import sqlite3 from "sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createRequire } from "module";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import { auth, requireRole, signToken } from "./auth.js";
+import openApiSpec from "./openapi.js";
 
 dotenv.config();
 
@@ -18,6 +20,8 @@ app.use(cors());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+const swaggerUiDistPath = require("swagger-ui-dist").absolutePath();
 
 const PORT = process.env.PORT || 3001;
 const DB_PATH = path.join(__dirname, "data.db");
@@ -426,6 +430,36 @@ app.get("/api/admin/users", auth, requireRole("admin"), (_req, res) => {
     if (err) return res.status(500).json({ error: "Error interno del servidor" });
     res.json(rows);
   });
+});
+
+app.get("/api/openapi.json", (_req, res) => {
+  res.json(openApiSpec);
+});
+
+app.use("/api/docs/assets", express.static(swaggerUiDistPath));
+
+app.get("/api/docs/swagger-ui-init.js", (_req, res) => {
+  res.type("application/javascript");
+  res.sendFile(path.join(__dirname, "swagger-ui-init.js"));
+});
+
+app.get(["/api/docs", "/api/docs/"], (_req, res) => {
+  res.type("html").send(`<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HealthyApp API Docs</title>
+    <link rel="stylesheet" href="/api/docs/assets/swagger-ui.css" />
+    <link rel="icon" type="image/png" href="/api/docs/assets/favicon-32x32.png" sizes="32x32" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="/api/docs/assets/swagger-ui-bundle.js"></script>
+    <script src="/api/docs/assets/swagger-ui-standalone-preset.js"></script>
+    <script src="/api/docs/swagger-ui-init.js"></script>
+  </body>
+</html>`);
 });
 
 // app.delete("/api/entries/:id", auth, (req, res) => {
