@@ -1,0 +1,1 @@
+ C:\\Users\\Usuario\\OneDrive\\Escritorio\\HealthyApp_movil\\HealthyApp-main\\mobile_app\\.dart_tool\\flutter_build\\6acbd84c4849969443c3efd8844be8c1\\native_assets.json: 
