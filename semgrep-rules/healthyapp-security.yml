@@ -1,0 +1,16 @@
+rules:
+  - id: healthyapp-no-eval
+    message: "No uses eval() para ejecutar datos dinamicos. Puede permitir ejecucion de codigo arbitrario."
+    severity: ERROR
+    languages:
+      - javascript
+      - typescript
+    pattern: eval(...)
+    metadata:
+      category: security
+      technology:
+        - javascript
+      cwe:
+        - "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code"
+      owasp:
+        - A03:2021 - Injection

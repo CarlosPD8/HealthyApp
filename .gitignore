@@ -35,6 +35,11 @@ gitleaks-report.json
 gitleaks-baseline.json
 gitleaks-findings.json
 
+# Semgrep local demos/reports
+semgrep-vulnerable-demo.js
+semgrep-report.json
+semgrep.sarif
+
 # Flutter/Gradle generated artifacts
 mobile_app/.dart_tool/
 mobile_app/build/

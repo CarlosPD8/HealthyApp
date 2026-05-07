@@ -126,6 +126,14 @@ El repositorio incorpora Gitleaks para detectar secretos antes de que lleguen a 
 
 La guia para firmar commits con GPG y comprobar el badge `Verified` de GitHub esta en `docs/commit-signing.md`.
 
+## Proteccion de ramas
+
+La documentacion de las reglas de proteccion para la rama `main` esta en `docs/branch-protection.md`.
+
+## Analisis SAST con Semgrep
+
+El repositorio incorpora Semgrep para detectar vulnerabilidades y malas practicas mediante analisis estatico. La documentacion esta en `docs/semgrep.md`.
+
 ## Ejecucion de Tests
 
 ### Backend

@@ -1,0 +1,28 @@
+name: Semgrep
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/semgrep.yml"
+      - "semgrep-rules/**"
+      - ".semgrepignore"
+  schedule:
+    - cron: "37 18 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: semgrep/scan
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep OSS scan
+        run: semgrep scan --config auto --config semgrep-rules --error
