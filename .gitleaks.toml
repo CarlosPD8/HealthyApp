@@ -26,3 +26,13 @@ secretGroup = 1
 keywords = [
   "HEALTHYAPP_",
 ]
+
+[[rules]]
+id = "env-file-assignment"
+description = "Environment files must not be committed"
+path = '''(^|/)\.env(\..*)?$|(^|/)(backend|frontend)/\.env(\..*)?$'''
+regex = '''(?m)^([^#\s][A-Za-z_][A-Za-z0-9_]*\s*=\s*.+)$'''
+secretGroup = 1
+keywords = [
+  "=",
+]

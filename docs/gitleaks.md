@@ -111,6 +111,8 @@ Tambien ignora rutas que no son codigo fuente, como `coverage`, bases de datos l
 
 Solo se debe anadir algo a la allowlist si se ha comprobado que no es un secreto real.
 
+Ademas, el proyecto incluye una regla propia `env-file-assignment` para bloquear archivos `.env` si alguien intenta forzarlos con `git add -f`. Aunque `.env` ya esta en `.gitignore`, esta regla anade una segunda barrera de seguridad.
+
 ## Prueba de funcionamiento
 
 Para probarlo sin dejar secretos en el historial final:
