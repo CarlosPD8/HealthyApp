@@ -112,6 +112,16 @@ La documentacion de la API esta disponible en:
 
 Si quieres importarla en SwaggerHub o Swagger Editor, usa la URL del `openapi.json`.
 
+## Seguridad con Gitleaks
+
+El repositorio incorpora Gitleaks para detectar secretos antes de que lleguen a `main`.
+
+- CI/CD: `.github/workflows/gitleaks.yml`
+- Configuracion: `.gitleaks.toml`
+- Hook local: `.pre-commit-config.yaml`
+- Hook Git directo: `.githooks/pre-commit`
+- Documentacion de uso y prueba: `docs/gitleaks.md`
+
 ## Ejecucion de Tests
 
 ### Backend

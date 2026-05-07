@@ -26,3 +26,19 @@ dist-ssr
 .env
 backend/.env
 frontend/.env
+
+# Python/pre-commit local environment
+.venv/
+
+# Gitleaks local reports/baselines
+gitleaks-report.json
+gitleaks-baseline.json
+gitleaks-findings.json
+
+# Flutter/Gradle generated artifacts
+mobile_app/.dart_tool/
+mobile_app/build/
+mobile_app/android/.gradle/
+mobile_app/ios/Flutter/Generated.xcconfig
+mobile_app/ios/Flutter/flutter_export_environment.sh
+mobile_app/macos/Flutter/ephemeral/

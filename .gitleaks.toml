@@ -1,0 +1,28 @@
+title = "HealthyApp Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated files and binary documentation that produce noise but are not source code."
+paths = [
+  '''^backend/coverage/''',
+  '''^backend/data\.db$''',
+  '''^docs/.*\.(pdf|png|jpg|jpeg)$''',
+  '''^frontend/src/assets/.*\.svg$''',
+  '''^mobile_app/\.dart_tool/''',
+  '''^mobile_app/build/''',
+  '''^mobile_app/android/\.gradle/''',
+  '''^mobile_app/ios/Flutter/Generated\.xcconfig$''',
+  '''^mobile_app/ios/Flutter/flutter_export_environment\.sh$''',
+  '''^mobile_app/macos/Flutter/ephemeral/''',
+]
+
+[[rules]]
+id = "healthyapp-internal-token"
+description = "HealthyApp internal token format"
+regex = '''\b(HEALTHYAPP_[A-Z0-9]{32,})\b'''
+secretGroup = 1
+keywords = [
+  "HEALTHYAPP_",
+]
